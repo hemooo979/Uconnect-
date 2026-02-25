@@ -17,11 +17,14 @@ import {
   Play,
   Pause,
   SkipBack,
-  SkipForward
+  SkipForward,
+  Bluetooth,
+  RefreshCw,
+  Check
 } from 'lucide-react';
 
 // --- Types ---
-type Screen = 'login' | 'dashboard' | 'climate' | 'media' | 'engineering';
+type Screen = 'login' | 'dashboard' | 'climate' | 'media' | 'engineering' | 'settings' | 'bluetooth';
 
 // --- Components ---
 
@@ -56,7 +59,7 @@ const StatCard = ({ label, value, unit, icon: Icon }: any) => (
 );
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>('engineering');
+  const [screen, setScreen] = useState<Screen>('dashboard');
   const [isLocked, setIsLocked] = useState(true);
   const [isEngineOn, setIsEngineOn] = useState(false);
   const [temp, setTemp] = useState(22);
@@ -75,6 +78,14 @@ export default function App() {
     canBusLoad: 12.4,
     cellImbalance: 0.002
   });
+
+  const [bluetoothDevices, setBluetoothDevices] = useState([
+    { id: 1, name: "iPhone 15 Pro", connected: true, type: "phone" },
+    { id: 2, name: "Sony WH-1000XM5", connected: false, type: "audio" },
+    { id: 3, name: "Pixel 8", connected: false, type: "phone" },
+  ]);
+
+  const [isScanning, setIsScanning] = useState(false);
 
   const progressBarRef = useRef<HTMLDivElement>(null);
 
@@ -199,6 +210,119 @@ export default function App() {
               </div>
             </div>
           </motion.div>
+        ) : screen === 'settings' ? (
+          <motion.div
+            key="settings"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="flex-1 flex flex-col px-6 pt-8 pb-12 z-10"
+          >
+            <div className="flex items-center gap-4 mb-8">
+              <button onClick={() => setScreen('dashboard')} className="p-2 bg-white/5 rounded-lg">
+                <ChevronRight className="w-5 h-5 rotate-180 text-white/60" />
+              </button>
+              <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
+            </div>
+
+            <div className="space-y-4">
+              <button 
+                onClick={() => setScreen('bluetooth')}
+                className="w-full flex items-center justify-between p-4 glass-panel hover:bg-white/10 transition-colors"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="p-2 bg-blue-500/20 rounded-lg">
+                    <Bluetooth className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-bold">Bluetooth</p>
+                    <p className="text-[10px] text-white/40 uppercase tracking-wider">Pair new devices</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-white/20" />
+              </button>
+
+              <div className="p-4 glass-panel opacity-50 cursor-not-allowed">
+                <div className="flex items-center gap-4">
+                  <div className="p-2 bg-white/5 rounded-lg">
+                    <Settings className="w-5 h-5 text-white/60" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-bold">System Updates</p>
+                    <p className="text-[10px] text-white/40 uppercase tracking-wider">v12.4.1 Installed</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        ) : screen === 'bluetooth' ? (
+          <motion.div
+            key="bluetooth"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="flex-1 flex flex-col px-6 pt-8 pb-12 z-10"
+          >
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                <button onClick={() => setScreen('settings')} className="p-2 bg-white/5 rounded-lg">
+                  <ChevronRight className="w-5 h-5 rotate-180 text-white/60" />
+                </button>
+                <h2 className="text-2xl font-bold tracking-tight">Bluetooth</h2>
+              </div>
+              <button 
+                onClick={() => {
+                  setIsScanning(true);
+                  setTimeout(() => setIsScanning(false), 2000);
+                }}
+                className={`p-2 rounded-lg ${isScanning ? 'bg-blue-500/20' : 'bg-white/5'}`}
+              >
+                <RefreshCw className={`w-5 h-5 text-blue-400 ${isScanning ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+
+            <p className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-4 px-2">My Devices</p>
+            <div className="space-y-3 mb-8">
+              {bluetoothDevices.map((device) => (
+                <div key={device.id} className="flex items-center justify-between p-4 glass-panel">
+                  <div className="flex items-center gap-4">
+                    <div className={`p-2 rounded-lg ${device.connected ? 'bg-blue-500/20' : 'bg-white/5'}`}>
+                      <Bluetooth className={`w-5 h-5 ${device.connected ? 'text-blue-400' : 'text-white/40'}`} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold">{device.name}</p>
+                      <p className="text-[10px] text-white/40 uppercase tracking-wider">
+                        {device.connected ? 'Connected' : 'Not Connected'}
+                      </p>
+                    </div>
+                  </div>
+                  {device.connected ? (
+                    <Check className="w-5 h-5 text-blue-400" />
+                  ) : (
+                    <button 
+                      onClick={() => {
+                        setBluetoothDevices(prev => prev.map(d => d.id === device.id ? { ...d, connected: true } : { ...d, connected: false }));
+                      }}
+                      className="text-[10px] font-bold uppercase tracking-widest text-blue-400 hover:text-blue-300"
+                    >
+                      Connect
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {isScanning && (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex flex-col items-center justify-center p-8 border border-dashed border-white/10 rounded-2xl"
+              >
+                <RefreshCw className="w-8 h-8 text-blue-400 animate-spin mb-4" />
+                <p className="text-xs text-white/40 font-mono uppercase tracking-widest">Searching for devices...</p>
+              </motion.div>
+            )}
+          </motion.div>
         ) : (
           <motion.div
             key="dashboard"
@@ -213,7 +337,10 @@ export default function App() {
                 <p className="text-white/40 text-xs font-mono">VIN: 5YJ3E1EB...892</p>
               </div>
               <div className="bg-white/5 p-2 rounded-xl border border-white/10">
-                <Settings className="w-5 h-5 text-white/60" />
+                <Settings 
+                  className="w-5 h-5 text-white/60 cursor-pointer" 
+                  onClick={() => setScreen('settings')}
+                />
               </div>
             </div>
 
