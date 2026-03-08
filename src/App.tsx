@@ -20,7 +20,12 @@ import {
   SkipForward,
   Bluetooth,
   RefreshCw,
-  Check
+  Check,
+  Plus,
+  Minus,
+  Wind,
+  Snowflake,
+  Flame
 } from 'lucide-react';
 
 // --- Types ---
@@ -86,6 +91,8 @@ export default function App() {
   ]);
 
   const [isScanning, setIsScanning] = useState(false);
+  const [fanSpeed, setFanSpeed] = useState(4);
+  const [seatHeat, setSeatHeat] = useState(0); // 0: off, 1-3: heat levels, -1 to -3: cool levels? Let's stick to 0-3 for heat.
 
   const progressBarRef = useRef<HTMLDivElement>(null);
 
@@ -323,6 +330,196 @@ export default function App() {
               </motion.div>
             )}
           </motion.div>
+        ) : screen === 'climate' ? (
+          <motion.div
+            key="climate"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="flex-1 flex flex-col px-6 pt-8 pb-12 z-10"
+          >
+            <div className="flex items-center gap-4 mb-8">
+              <button onClick={() => setScreen('dashboard')} className="p-2 bg-white/5 rounded-lg">
+                <ChevronRight className="w-5 h-5 rotate-180 text-white/60" />
+              </button>
+              <h2 className="text-2xl font-bold tracking-tight">Climate</h2>
+            </div>
+
+            {/* Temperature Control */}
+            <div className="flex flex-col items-center justify-center mb-12">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-bold mb-4">Interior Temperature</p>
+              <div className="flex items-center gap-8">
+                <motion.button 
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setTemp(prev => Math.max(16, prev - 1))}
+                  className="p-4 bg-white/5 rounded-2xl border border-white/10"
+                >
+                  <Minus className="w-6 h-6 text-blue-400" />
+                </motion.button>
+                <div className="text-center">
+                  <span className="text-6xl font-bold tracking-tighter">{temp}</span>
+                  <span className="text-2xl text-white/40 ml-1">°C</span>
+                </div>
+                <motion.button 
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setTemp(prev => Math.min(30, prev + 1))}
+                  className="p-4 bg-white/5 rounded-2xl border border-white/10"
+                >
+                  <Plus className="w-6 h-6 text-red-400" />
+                </motion.button>
+              </div>
+            </div>
+
+            {/* Fan Speed */}
+            <div className="mb-12">
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-bold">Fan Speed</p>
+                <span className="text-sm font-mono text-blue-400">{fanSpeed}</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <Wind className="w-5 h-5 text-white/40" />
+                <div className="flex-1 h-12 flex items-center gap-1">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((speed) => (
+                    <motion.button
+                      key={speed}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setFanSpeed(speed)}
+                      animate={speed <= fanSpeed ? { 
+                        opacity: [0.7, 1, 0.7],
+                        boxShadow: speed === fanSpeed ? "0 0 20px rgba(59,130,246,0.6)" : "0 0 10px rgba(59,130,246,0.3)"
+                      } : { opacity: 1, boxShadow: "none" }}
+                      transition={speed <= fanSpeed ? { duration: 2, repeat: Infinity, ease: "easeInOut" } : {}}
+                      className={`flex-1 h-full rounded-md transition-all ${
+                        speed <= fanSpeed 
+                          ? 'bg-blue-500' 
+                          : 'bg-white/5'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Seat Heating */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="glass-panel p-4 flex flex-col items-center gap-4">
+                <p className="text-[10px] uppercase tracking-widest text-white/40 font-bold">Driver Seat</p>
+                <div className="flex gap-2">
+                  {[1, 2, 3].map((level) => (
+                    <motion.button
+                      key={level}
+                      whileTap={{ scale: 0.9 }}
+                      animate={seatHeat >= level ? { 
+                        scale: [1, 1.05, 1],
+                        backgroundColor: "rgba(239, 68, 68, 0.25)"
+                      } : { scale: 1, backgroundColor: "rgba(255, 255, 255, 0.05)" }}
+                      transition={seatHeat >= level ? { duration: 1.5, repeat: Infinity, ease: "easeInOut" } : {}}
+                      onClick={() => setSeatHeat(prev => prev === level ? 0 : level)}
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                        seatHeat >= level 
+                          ? 'border border-red-500/50 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.4)]' 
+                          : 'border border-white/10 text-white/20'
+                      }`}
+                    >
+                      <Flame className={`w-5 h-5 ${seatHeat >= level ? 'fill-current' : ''}`} />
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+              <div className="glass-panel p-4 flex flex-col items-center gap-4">
+                <p className="text-[10px] uppercase tracking-widest text-white/40 font-bold">A/C Mode</p>
+                <motion.button 
+                  animate={{ 
+                    boxShadow: ["0 0 10px rgba(59,130,246,0.2)", "0 0 20px rgba(59,130,246,0.4)", "0 0 10px rgba(59,130,246,0.2)"]
+                  }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                  className="w-full py-3 rounded-xl bg-blue-500/20 border border-blue-500/50 text-blue-400 flex items-center justify-center gap-2"
+                >
+                  <Snowflake className="w-5 h-5" />
+                  <span className="text-xs font-bold uppercase tracking-widest">Auto On</span>
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        ) : screen === 'media' ? (
+          <motion.div
+            key="media"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.05 }}
+            className="flex-1 flex flex-col px-6 pt-8 pb-12 z-10"
+          >
+            <div className="flex items-center gap-4 mb-12">
+              <button onClick={() => setScreen('dashboard')} className="p-2 bg-white/5 rounded-lg">
+                <ChevronRight className="w-5 h-5 rotate-180 text-white/60" />
+              </button>
+              <h2 className="text-2xl font-bold tracking-tight">Now Playing</h2>
+            </div>
+
+            <div className="flex-1 flex flex-col items-center justify-center">
+              {/* Album Art */}
+              <motion.div 
+                layoutId="album-art"
+                className="w-64 h-64 bg-gradient-to-br from-blue-600 to-indigo-900 rounded-3xl shadow-2xl mb-12 flex items-center justify-center relative overflow-hidden"
+              >
+                <Music className="w-24 h-24 text-white/20" />
+                <div className="absolute inset-0 bg-black/20" />
+                <motion.div 
+                  animate={{ 
+                    scale: isPlaying ? [1, 1.05, 1] : 1,
+                    rotate: isPlaying ? [0, 5, -5, 0] : 0
+                  }}
+                  transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                  className="absolute inset-0 border-4 border-white/10 rounded-3xl"
+                />
+              </motion.div>
+
+              <div className="text-center mb-12">
+                <motion.h3 layoutId="track-title" className="text-3xl font-bold mb-2">{currentTrack.title}</motion.h3>
+                <motion.p layoutId="track-artist" className="text-lg text-white/40 uppercase tracking-widest">{currentTrack.artist}</motion.p>
+              </div>
+
+              {/* Progress Bar */}
+              <div 
+                ref={progressBarRef}
+                className="w-full h-8 flex items-center cursor-pointer group mb-8 touch-none"
+                onPointerDown={handleSeek}
+                onPointerMove={(e) => e.buttons === 1 && handleSeek(e)}
+              >
+                <div className="w-full h-1.5 bg-white/10 rounded-full relative">
+                  <motion.div 
+                    className="h-full bg-blue-500 rounded-full" 
+                    animate={{ width: `${currentTrack.progress}%` }}
+                    transition={{ type: "spring", bounce: 0, duration: 0.1 }}
+                  />
+                  <motion.div 
+                    className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-xl border-2 border-blue-500"
+                    animate={{ left: `${currentTrack.progress}%` }}
+                    style={{ x: '-50%' }}
+                    transition={{ type: "spring", bounce: 0, duration: 0.1 }}
+                  />
+                </div>
+              </div>
+
+              {/* Controls */}
+              <div className="flex items-center justify-center gap-12">
+                <button className="text-white/40 hover:text-white transition-colors">
+                  <SkipBack className="w-8 h-8 fill-current" />
+                </button>
+                <motion.button 
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setIsPlaying(!isPlaying)}
+                  className="w-20 h-20 bg-white rounded-full flex items-center justify-center text-black shadow-xl"
+                >
+                  {isPlaying ? <Pause className="w-10 h-10 fill-current" /> : <Play className="w-10 h-10 fill-current ml-1" />}
+                </motion.button>
+                <button className="text-white/40 hover:text-white transition-colors">
+                  <SkipForward className="w-8 h-8 fill-current" />
+                </button>
+              </div>
+            </div>
+          </motion.div>
         ) : (
           <motion.div
             key="dashboard"
@@ -396,19 +593,25 @@ export default function App() {
               <IconButton 
                 icon={Fan} 
                 label="Climate" 
-                onClick={() => {}} 
+                onClick={() => setScreen('climate')} 
               />
             </div>
 
             {/* Media Control Panel */}
-            <div className="mb-8 glass-panel p-4">
+            <div 
+              className="mb-8 glass-panel p-4 cursor-pointer"
+              onClick={() => setScreen('media')}
+            >
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center overflow-hidden">
+                <motion.div 
+                  layoutId="album-art"
+                  className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center overflow-hidden"
+                >
                   <Music className="w-6 h-6 text-blue-400" />
-                </div>
+                </motion.div>
                 <div className="flex-1">
-                  <p className="text-sm font-bold truncate">{currentTrack.title}</p>
-                  <p className="text-[10px] text-white/40 uppercase tracking-wider">{currentTrack.artist}</p>
+                  <motion.p layoutId="track-title" className="text-sm font-bold truncate">{currentTrack.title}</motion.p>
+                  <motion.p layoutId="track-artist" className="text-[10px] text-white/40 uppercase tracking-wider">{currentTrack.artist}</motion.p>
                 </div>
               </div>
               
@@ -416,31 +619,55 @@ export default function App() {
               <div 
                 ref={progressBarRef}
                 className="w-full h-6 flex items-center cursor-pointer group mb-2 touch-none"
-                onPointerDown={handleSeek}
-                onPointerMove={(e) => e.buttons === 1 && handleSeek(e)}
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  handleSeek(e);
+                }}
+                onPointerMove={(e) => {
+                  if (e.buttons === 1) {
+                    e.stopPropagation();
+                    handleSeek(e);
+                  }
+                }}
               >
-                <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden relative">
+                <div className="w-full h-1 bg-white/10 rounded-full relative">
                   <motion.div 
-                    className="h-full bg-blue-500" 
+                    className="h-full bg-blue-500 rounded-full" 
                     initial={{ width: 0 }}
                     animate={{ width: `${currentTrack.progress}%` }}
+                    transition={{ type: "spring", bounce: 0, duration: 0.1 }}
+                  />
+                  {/* Visual Thumb */}
+                  <motion.div 
+                    className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)] border border-blue-500"
+                    animate={{ left: `${currentTrack.progress}%` }}
+                    style={{ x: '-50%' }}
                     transition={{ type: "spring", bounce: 0, duration: 0.1 }}
                   />
                 </div>
               </div>
 
               <div className="flex items-center justify-center gap-8">
-                <button className="text-white/40 hover:text-white transition-colors">
+                <button 
+                  className="text-white/40 hover:text-white transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <SkipBack className="w-5 h-5 fill-current" />
                 </button>
                 <motion.button 
                   whileTap={{ scale: 0.9 }}
-                  onClick={() => setIsPlaying(!isPlaying)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsPlaying(!isPlaying);
+                  }}
                   className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-black"
                 >
                   {isPlaying ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 fill-current ml-1" />}
                 </motion.button>
-                <button className="text-white/40 hover:text-white transition-colors">
+                <button 
+                  className="text-white/40 hover:text-white transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <SkipForward className="w-5 h-5 fill-current" />
                 </button>
               </div>
@@ -476,10 +703,18 @@ export default function App() {
       {/* Bottom Navigation (Only if logged in) */}
       {screen !== 'login' && (
         <div className="absolute bottom-0 left-0 right-0 h-20 bg-black/80 backdrop-blur-xl border-t border-white/5 flex items-center justify-around px-6 z-20">
-          <Car className="w-6 h-6 text-blue-500" />
-          <Navigation className="w-6 h-6 text-white/40" />
-          <Music className="w-6 h-6 text-white/40" />
-          <Settings className="w-6 h-6 text-white/40" />
+          <button onClick={() => setScreen('dashboard')}>
+            <Car className={`w-6 h-6 ${screen === 'dashboard' ? 'text-blue-500' : 'text-white/40'}`} />
+          </button>
+          <button onClick={() => setScreen('climate')}>
+            <Fan className={`w-6 h-6 ${screen === 'climate' ? 'text-blue-500' : 'text-white/40'}`} />
+          </button>
+          <button onClick={() => setScreen('media')}>
+            <Music className={`w-6 h-6 ${screen === 'media' ? 'text-blue-500' : 'text-white/40'}`} />
+          </button>
+          <button onClick={() => setScreen('settings')}>
+            <Settings className={`w-6 h-6 ${screen === 'settings' || screen === 'bluetooth' ? 'text-blue-500' : 'text-white/40'}`} />
+          </button>
         </div>
       )}
     </div>
