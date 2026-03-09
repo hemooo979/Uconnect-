@@ -85,10 +85,24 @@ export default function App() {
   });
 
   const [bluetoothDevices, setBluetoothDevices] = useState([
-    { id: 1, name: "iPhone 15 Pro", connected: true, type: "phone" },
-    { id: 2, name: "Sony WH-1000XM5", connected: false, type: "audio" },
-    { id: 3, name: "Pixel 8", connected: false, type: "phone" },
+    { id: 1, name: "iPhone 15 Pro", connected: true, type: "phone", connecting: false },
+    { id: 2, name: "Sony WH-1000XM5", connected: false, type: "audio", connecting: false },
+    { id: 3, name: "Pixel 8", connected: false, type: "phone", connecting: false },
   ]);
+
+  const handleConnectDevice = (deviceId: number) => {
+    // Only one device can connect at a time
+    setBluetoothDevices(prev => prev.map(d => 
+      d.id === deviceId ? { ...d, connecting: true, connected: false } : { ...d, connected: false, connecting: false }
+    ));
+
+    // Simulate connection delay
+    setTimeout(() => {
+      setBluetoothDevices(prev => prev.map(d => 
+        d.id === deviceId ? { ...d, connected: true, connecting: false } : d
+      ));
+    }, 2000);
+  };
 
   const [isScanning, setIsScanning] = useState(false);
   const [fanSpeed, setFanSpeed] = useState(4);
@@ -299,17 +313,17 @@ export default function App() {
                     <div>
                       <p className="text-sm font-bold">{device.name}</p>
                       <p className="text-[10px] text-white/40 uppercase tracking-wider">
-                        {device.connected ? 'Connected' : 'Not Connected'}
+                        {device.connecting ? 'Connecting...' : device.connected ? 'Connected' : 'Not Connected'}
                       </p>
                     </div>
                   </div>
                   {device.connected ? (
                     <Check className="w-5 h-5 text-blue-400" />
+                  ) : device.connecting ? (
+                    <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" />
                   ) : (
                     <button 
-                      onClick={() => {
-                        setBluetoothDevices(prev => prev.map(d => d.id === device.id ? { ...d, connected: true } : { ...d, connected: false }));
-                      }}
+                      onClick={() => handleConnectDevice(device.id)}
                       className="text-[10px] font-bold uppercase tracking-widest text-blue-400 hover:text-blue-300"
                     >
                       Connect
