@@ -15,7 +15,7 @@ export default defineConfig(({mode}) => {
         '@': path.resolve(__dirname, '.'),
       },
     },
-      server: {
+        server: {
     port: 3000,
     strictPort: true,
     host: true,
